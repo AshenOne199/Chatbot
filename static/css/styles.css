@@ -1,0 +1,181 @@
+/* static/css/styles.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #F5F5F5; /* Gris claro */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.chat-container {
+    background-color: #FFFFFF; /* Blanco */
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 600px; /* Aumentado el ancho */
+    max-width: 95%; /* Ajustado para ser flexible en dispositivos pequeños */
+    height: 500px; /* Aumentado el alto */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-header {
+    background-color: #002855; /* Azul UD */
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+#chatHistory {
+    padding: 10px;
+    height: 70%; /* Ajustado para usar un porcentaje del alto del contenedor */
+    overflow-y: auto;
+    flex-grow: 1;
+    background-color: #F0F0F0; /* Fondo gris claro */
+    word-wrap: break-word; /* Asegura que el texto no se desborde */
+}
+
+.chat-input {
+    display: flex;
+    border-top: 1px solid #ccc;
+    background-color: #FFFFFF; /* Blanco para la barra de entrada */
+}
+
+.chat-input input {
+    border: none;
+    padding: 15px;
+    flex-grow: 1;
+    border-radius: 0;
+    outline: none;
+    font-size: 1em;
+}
+
+.chat-input button {
+    background-color: #002855; /* Azul UD */
+    color: white;
+    border: none;
+    padding: 15px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+.chat-input button:hover {
+    background-color: #004A91; /* Azul más claro */
+}
+
+.chat-message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+/* Mensaje del usuario en el lado izquierdo */
+.chat-message.user {
+    background-color: #002855; /* Azul UD */
+    color: white;
+    align-self: flex-start;
+    border-bottom-left-radius: 0; /* Ajuste de esquina para el usuario */
+    text-align: justify;
+}
+
+.chat-message.bot {
+    background-color: #e0e0e0; /* Gris claro para mensajes del bot */
+    color: #4A4A4A; /* Gris oscuro para el texto */
+    align-self: flex-end;
+    border-bottom-right-radius: 0; /* Ajuste de esquina para el bot */
+    text-align: justify; /* Justificar contenido del Markdown */
+    margin-left: auto; /* Empuja el mensaje hacia el borde derecho */
+    width: calc(100% - 20px); /* Ajusta el ancho para que se pegue al borde */
+    padding-right: 10px; /* Espacio entre el texto y el borde derecho */
+    padding-left: 10px; /* Espacio entre el texto y el borde izquierdo */
+}
+
+/* Justificar contenido Markdown */
+.chat-message.bot p,
+.chat-message.bot h1,
+.chat-message.bot h2,
+.chat-message.bot h3,
+.chat-message.bot ul,
+.chat-message.bot ol,
+.chat-message.bot li {
+    text-align: justify; /* Justificar contenido Markdown */
+}
+
+/* Ajuste de estilos para el contenido Markdown */
+.chat-message.bot p {
+    margin: 0 0 10px;
+}
+
+.chat-message.bot ul {
+    padding-left: 20px;
+    margin: 10px 0;
+}
+
+.chat-message.bot li {
+    margin-bottom: 5px;
+}
+
+.chat-message.bot code {
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.chat-message.bot pre {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* Estilo para el mensaje de "Escribiendo..." con animación de puntos */
+#typingIndicator {
+    background-color: #e0e0e0; /* Gris claro para mensajes del bot */
+    color: #4A4A4A; /* Gris oscuro para el texto */
+    align-self: flex-end;
+    border-bottom-right-radius: 0; /* Ajuste de esquina para el bot */
+    text-align: justify; /* Alinea el texto del mensaje a la derecha */
+    margin-left: auto; /* Empuja el mensaje hacia el borde derecho */
+    width: calc(100% - 20px); /* Ajusta el ancho para que se pegue al borde */
+    padding-right: 10px; /* Espacio entre el texto y el borde derecho */
+    padding-left: 10px; /* Espacio entre el texto y el borde izquierdo */
+}
+
+.dots-container {
+    display: inline-block;
+}
+
+.dot {
+    display: inline-block;
+    font-weight: bold;
+    font-size: 1.5em;
+    line-height: 1;
+    margin-left: 2px;
+    position: relative;
+    animation: bounce 0.6s infinite alternate;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-10px);
+    }
+}
