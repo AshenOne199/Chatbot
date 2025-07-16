@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'csp',
-    'chatbot'
+    'chatbot',
+    'websearch',
 ]
 
 MIDDLEWARE = [
@@ -194,6 +195,11 @@ LOGGING = {
             'propagate': True,
         },
         'chatbot': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'websearch': {
             'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,

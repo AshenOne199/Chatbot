@@ -4,14 +4,24 @@
         "aws_bedrock": {
             "model": "cohere.command-r-v1:0",
             "temperature": 0.2,
-            "max_tokens": 50,
-            "docs_directory": "./chatbot/docs/"
+            "max_tokens": 50
         },
         "cohere": {
             "model": "command-nightly",
             "temperature": 0.2,
-            "max_tokens": 100,
-            "docs_directory": "./chatbot/docs/"
+            "max_tokens": 100
         }
+    },
+    "websearch": {
+        "include_domains": [
+            "planestic.udistrital.edu.co",
+            "udistrital.edu.co",
+            "autoevaluacionyacreditacion.udistrital.edu.co",
+            "moodleilud.udistrital.edu.co"
+        ],
+        "country": "colombia",
+        "max_results": 5,
+        "chunks_per_source": 3,
+        "search_depth": "advanced"
     }
 }

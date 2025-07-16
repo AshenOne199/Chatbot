@@ -5,12 +5,10 @@ import re
 import random
 import logging
 from dotenv import load_dotenv
-from langchain.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
 from langchain_cohere.chat_models import ChatCohere
 from chatbot.rag.utils.singleton_meta import SingletonMeta
 from chatbot.rag.handlers.base_handler import BaseQAHandler
-from chatbot.rag.utils import utils
 from chatbot.rag.utils.patterns import (
     prompt_template,
     greetings,
@@ -20,6 +18,7 @@ from chatbot.rag.utils.patterns import (
     gratefulness,
     gratefulness_messages,
 )
+from websearch.search import search_web
 
 load_dotenv()
 
@@ -28,21 +27,18 @@ logger = logging.getLogger(__name__)
 class QA_CohereHandler(BaseQAHandler, metaclass=SingletonMeta):
     """
     Handler to manage interactions with the Cohere model for generating responses
-    based on documents retrieved using TF-IDF.
+    based exclusively on web search results using Tavily.
     """
     
-    def __init__(self, model: str, temperature: float, max_tokens: int, docs_directory: str,
-                 chunk_size: int = 500, chunk_overlap: int = 0):
+    def __init__(self, model: str, temperature: float, max_tokens: int):
         """
-        Initializes the handler with model parameters, prompt template, and document database.
+        Initializes the handler with model parameters and prompt template.
+        Now exclusively uses web search for context retrieval.
 
         Args:
             model (str): The type of Cohere model.
             temperature (float): Level of randomness for response generation.
             max_tokens (int): Maximum number of tokens in the generated response.
-            docs_directory (str): Directory path to the documents database.
-            chunk_size (int): Size of the chunks when splitting documents for retrieval.
-            chunk_overlap (int): Size of the overlap between document chunks.
         """
         # Avoid multiple initializations
         if hasattr(self, '_initialized') and self._initialized:
@@ -56,13 +52,11 @@ class QA_CohereHandler(BaseQAHandler, metaclass=SingletonMeta):
         logger.info(f'Temperature: {temperature}')
         logger.info(f'Max Tokens: {max_tokens}')
 
-        # Load prompt template, documents, LLM, and QA retriever
+        # Load prompt template and LLM
         self.load_prompt_template()
-        self.tfidf_retriever = utils.load_documents_database(docs_directory, chunk_size, chunk_overlap)
         self.load_llm()
-        self.load_qa()
         
-        logger.info('Cohere Handler creado correctamente.')
+        logger.info('Cohere Handler creado correctamente (solo búsqueda web).')
         
     def load_prompt_template(self):
         """
@@ -82,7 +76,6 @@ class QA_CohereHandler(BaseQAHandler, metaclass=SingletonMeta):
         Loads the Cohere LLM model to generate responses.
         """
         try:
-            print(self.max_tokens)
             self.llm = ChatCohere(
                 model=self.model,
                 temperature=self.temperature,
@@ -92,29 +85,50 @@ class QA_CohereHandler(BaseQAHandler, metaclass=SingletonMeta):
             logger.info('LLM cargado correctamente.')
         except Exception as e:
             logger.error(f'Ha ocurrido un error al cargar el LLM {self.model}.', exc_info=True)
+
+    def get_web_context(self, web_results: list) -> str:
+        """
+        Optimiza el contexto web combinando múltiples resultados de manera inteligente.
         
-    def load_qa(self):
+        Args:
+            web_results (list): Lista de resultados de búsqueda web
+            
+        Returns:
+            str: Contexto web optimizado para el prompt
         """
-        Initializes the RetrievalQA chain for querying the document database.
-        """
-        try:
-            self.qa = RetrievalQA.from_chain_type(
-                llm=self.llm,
-                chain_type="stuff",
-                retriever=self.tfidf_retriever,
-                verbose=False,
-                chain_type_kwargs={
-                    "verbose": False,
-                    "prompt": self.prompt
-                }
-            )
-            logger.info('RetrievalQA cargado correctamente.')
-        except Exception as e:
-            logger.error('Ha ocurrido un error al cargar el RetrievalQA.', exc_info=True)
+        if not web_results:
+            return ""
+        
+        context_parts = []
+        total_length = 0
+        max_context_length = 4000  # Límite dinámico basado en max_tokens
+        
+        for i, result in enumerate(web_results):
+            # Preferir raw_content sobre content
+            content = result.get('raw_content', result.get('content', ''))
+            
+            if content:
+                # Agregar metadatos útiles
+                source_info = f"[Fuente {i+1}: {result.get('title', 'Sin título')} - {result.get('url', '')}]"
+                formatted_content = f"{source_info}\n{content}\n"
+                
+                # Control inteligente de longitud
+                if total_length + len(formatted_content) <= max_context_length:
+                    context_parts.append(formatted_content)
+                    total_length += len(formatted_content)
+                else:
+                    # Incluir parcialmente si queda espacio
+                    remaining_space = max_context_length - total_length - len(source_info) - 20
+                    if remaining_space > 100:  # Solo si vale la pena
+                        truncated_content = content[:remaining_space] + "..."
+                        context_parts.append(f"{source_info}\n{truncated_content}\n")
+                    break
+        
+        return "\n".join(context_parts)
 
     def get_answer(self, query: str) -> str:
         """
-        Generates an answer for the given query using the Cohere model.
+        Generates an answer for the given query using the Cohere model with web search context.
 
         Args:
             query (str): The user's query or question.
@@ -123,15 +137,30 @@ class QA_CohereHandler(BaseQAHandler, metaclass=SingletonMeta):
             str: The response generated by the Cohere model.
         """
         try:
+            # Verificar patrones predefinidos
             if any(re.match(pattern, query.lower()) for pattern in greetings):
-                response =  random.choice(greeting_messages)
+                return random.choice(greeting_messages)
             elif any(re.match(pattern, query.lower()) for pattern in farewell):
-                response = random.choice(farewell_messages)
+                return random.choice(farewell_messages)
             elif any(re.match(pattern, query.lower()) for pattern in gratefulness):
-                response = random.choice(gratefulness_messages)
-            else:
-                response = self.qa.run({'query': query})
+                return random.choice(gratefulness_messages)
+            
+            # Búsqueda web optimizada
+            logger.info(f"Realizando búsqueda web para: '{query}'")
+            web_results = search_web(query)
+            
+            if not web_results:
+                logger.warning(f"No se encontraron resultados web para: '{query}'")
+                return "Lo siento, no pude encontrar información relevante en la web para responder tu consulta."
+            
+            # Generar respuesta usando el prompt optimizado
+            formatted_prompt = self.prompt.format(context=web_results, question=query)
+            
+            logger.info(f"Generando respuesta con contexto de {len(web_results)} fuente(s)")
+            response = self.llm.invoke(formatted_prompt).content
+            
             return response
+            
         except Exception as e:
             logger.error('Ha ocurrido un error en la ejecución del Query.', exc_info=True)
             return "Lo siento, ha ocurrido un error al procesar tu consulta."

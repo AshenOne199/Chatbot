@@ -24,8 +24,14 @@ def get_qa_handler(bot_type: str, bot_config: dict):
         logger.info('Inicializando AWS Bedrock Handler...')
         return aws_bedrock_handler.QA_AwsBedrockHandler(**bot_config)
     elif bot_type == 'cohere':
-        logger.info('Inicializando Cohere Handler...')
-        return cohere_handler.QA_CohereHandler(**bot_config)
+        logger.info('Inicializando Cohere Handler (solo búsqueda web)...')
+        # Cohere handler ahora solo necesita model, temperature y max_tokens
+        cohere_config = {
+            'model': bot_config['model'],
+            'temperature': bot_config['temperature'],
+            'max_tokens': bot_config['max_tokens']
+        }
+        return cohere_handler.QA_CohereHandler(**cohere_config)
     else:
         logger.error('No se ha podido inicializar ningun Handler.')
         raise ValueError(f"Unsupported bot type: {bot_type}")
